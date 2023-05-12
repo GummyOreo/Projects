@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GUMMY Browser Transcription</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #1d2f6f;
+      color: white;
+    }
+
+    h1 {
+      color: white;
+    }
+
+    .buttons {
+      margin-bottom: 20px;
+    }
+
+    button {
+      font-size: 20px;
+      font-weight: 300px;
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #FAC748;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #7a7a7a;
+    }
+
+    #transcript {
+      display: block;
+      width: 80%;
+      min-height: 300px;
+      padding: 20px;
+      margin: 20px auto;
+      border: 1px solid #4a4a4a;
+      border-radius: 10px;
+      background-color: white;
+      font-size: 16px;
+      overflow-wrap: break-word;
+      resize: none;
+      text-align: left;
+      line-height: 1.5;
+      white-space: pre-line;
+      color:black;
+    }
+
+    #status {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #website {
+        color: white;
+        
+    }
+  </style>
+</head>
+<body>
+  <h1>Gummy Browser Transcription</h1>
+  <div id="status">Click "Start Transcription" to begin</div>
+  <div class="buttons">
+    <button id="startBtn">Start Transcription</button>
+    <button id="stopBtn">Stop Transcription</button>
+    <button id="downloadBtn">Download Transcript</button>
+    <button id="clearBtn">Clear Transcript</button>
+  </div>
+  <div id="transcript" contenteditable></div>
+  <footer>
+    <p>&copy; <a href="http://jackiewu.live/" id="website">Jackiewu.live</a> All rights reserved.</p>
+  </footer>
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const transcript = document.getElementById("transcript");
+    const status = document.getElementById("status");
+
+    let recognition;
+    let isRecording = false;
+    let startTime;
+
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = function () {
+        status.textContent = "Transcription in progress...";
+        startTime = new Date();
+      };
+
+      recognition.onresult = function (event) {
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            const sentence = event.results[i][0].transcript.trim() + '.';
+            transcript.innerHTML += sentence.charAt(0).toUpperCase() + sentence.slice(1) + "<br>";
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+      };
+
+      recognition.onend = function () {
+        const endTime = new Date();
+        const duration = Math.round((endTime - startTime) / 1000); // in seconds
+        status.textContent = `Transcription completed. Duration: ${duration} seconds`;
+      };
+    } else {
+      alert("Your browser does not support the Web Speech API");
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (!isRecording) {
+        recognition.start();
+        isRecording = true;
+      }
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (isRecording) {
+        recognition.stop();
+        isRecording = false;
+      }
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      const formattedText = transcript.innerHTML.replace(/<br>/g, "\n");
+      const blob = new Blob([formattedText], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const date = new Date();
+      const timestamp = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}_${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}`;
+
+      a.href = url;
+      a.download = `transcript_${timestamp}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    clearBtn.addEventListener("click", () => {
+      transcript.innerHTML = "";
+    });
+  </script>
+</body>
+</html>
